@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parties del Clan NG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: three party columns side by side, each a list of 9 role slots; reserve strip below. */
+:root {
+  --bg: #14161c;
+  --panel: #1c1f28;
+  --line: #2f3441;
+  --ink: #e9e6dc;
+  --muted: #9ba0ae;
+  --gold: #d9a441;
+  --front: #d0614a;
+  --mage: #6a96f0;
+  --arch: #56b17b;
+  --display: "Cinzel", Georgia, "Times New Roman", serif;
+  --body: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.45; }
+body { padding: 24px 16px 56px; }
+.wrap { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--line); padding-bottom: 18px; }
+h1 { font-family: var(--display); font-size: clamp(1.6rem, 4vw, 2.3rem); margin: 0; letter-spacing: .02em; color: var(--gold); text-wrap: balance; }
+.sub { margin: 4px 0 0; color: var(--muted); max-width: 60ch; }
+.brand { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.logo { width: 84px; height: 84px; border-radius: 12px; border: 1px solid var(--line); flex: none; }
+.dedic { margin: 6px 0 0; color: var(--gold); font-style: italic; font-size: .95rem; }
+.total { text-align: right; font-variant-numeric: tabular-nums; }
+.total b { font-family: var(--display); font-size: 2rem; color: var(--ink); }
+.total span { display: block; color: var(--muted); font-size: .9rem; }
+.me { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.field { display: flex; flex-direction: column; gap: 4px; flex: 1 1 200px; }
+.field label { font-size: .8rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+input[type=text] { background: var(--bg); border: 1px solid var(--line); color: var(--ink); border-radius: 8px; padding: 10px 12px; font: inherit; width: 100%; }
+input[type=text]:focus-visible, button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.hint { color: var(--muted); font-size: .9rem; flex: 2 1 260px; }
+.status { font-size: .85rem; color: var(--muted); }
+.status.warn { color: var(--front); }
+.go { border-radius: 10px; padding: 14px 16px; border: 1px solid var(--line); border-left-width: 8px; background: var(--panel); display: grid; gap: 4px; }
+.go b { font-family: var(--display); font-size: 1.2rem; }
+.go span { color: var(--muted); font-size: .95rem; }
+.go.green { border-left-color: var(--arch); }
+.go.green b { color: var(--arch); }
+.go.stop { border-left-color: var(--front); }
+.go.stop b { color: var(--front); }
+.reset { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; border-top: 1px solid var(--line); padding-top: 14px; color: var(--muted); font-size: .9rem; }
+.parties { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 900px) { .parties { grid-template-columns: 1fr; } }
+.party { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--accent); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.party.front { --accent: var(--front); }
+.party.mage { --accent: var(--mage); }
+.party.arch { --accent: var(--arch); }
+.ph { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.ph h2 { font-family: var(--display); font-size: 1.15rem; margin: 0; color: var(--accent); }
+.count { font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 600; }
+.desc { margin: 0; color: var(--muted); font-size: .9rem; }
+.bar { height: 5px; background: var(--bg); border-radius: 3px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .25s; }
+.slots { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.slot { display: grid; grid-template-columns: 124px 1fr auto; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 7px 8px; min-height: 46px; }
+.slot.mine { border-color: var(--gold); }
+.role { display: flex; align-items: center; gap: 6px; font-size: .82rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: .04em; }
+.ico { flex: none; }
+.who { min-width: 0; overflow-wrap: anywhere; }
+.who .n { font-weight: 700; }
+.who .c { display: block; color: var(--muted); font-size: .82rem; }
+.empty { color: var(--muted); font-style: italic; }
+button { font: inherit; font-weight: 700; border-radius: 7px; border: 1px solid var(--accent, var(--gold)); background: transparent; color: var(--accent, var(--gold)); padding: 6px 12px; cursor: pointer; }
+button:hover:not(:disabled) { background: var(--accent, var(--gold)); color: #14161c; }
+button:disabled { opacity: .4; cursor: not-allowed; }
+button.leave { border-color: var(--muted); color: var(--muted); }
+button.leave:hover:not(:disabled) { background: var(--muted); }
+.caller { display: grid; grid-template-columns: 124px 1fr auto; align-items: center; gap: 8px; border: 1px dashed var(--accent); border-radius: 8px; padding: 8px; min-height: 46px; }
+.caller.mine { border-style: solid; border-color: var(--gold); }
+.caller .c { color: var(--muted); font-size: .82rem; }
+.reserve { background: var(--panel); border: 1px solid var(--line); border-top: 4px solid var(--gold); border-radius: 10px; padding: 14px; --accent: var(--gold); }
+.reserve .slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.rules { color: var(--muted); font-size: .92rem; display: grid; gap: 6px; }
+.rules h3 { font-family: var(--display); color: var(--gold); margin: 0 0 4px; font-size: 1rem; }
+.rules ul { margin: 0; padding-left: 18px; }
+@media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <img class="logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKgAAACoCAMAAABDlVWGAAAAwFBMVEX///////77+/zp6fCxsbtoaIg8O5s0Mso0MsczMcUyMMExL78xL7wwLrovLbgvLbQtLJEsK6oqKKMpJ50nJpgmJZUlJJAkIokiIIshIIEgH3sfHnkeHXQdHHEcG24aGG8eHWEbGmkbGmcaGWQZGGAWFWIWFVUVFFAUE00SEkgREEIPDjoNDTQMDDAIBzkNDSgKCigJCSQIBx4HBhgEBBkFBRIEBBADAw0DAwoAAAwEBAQCAgcBAQQBAQEAAAQAAAAljYI0AAAEKUlEQVR42u3c+1eiQBQHcIYBe6k9hHbXbLXIB7pBq64VxfL//1c7MzxVQIQaxvZ+f+h0yjqfc9UjM3Mvkue67+9vby8vL8/Pq9UfkgXJnOY3zRPNI8kvkhnLlMUkmUwmY5KRnwcWwzDu7+7ufpLc3vZ6vRuSbrf7g+YbyzWLruuapnVIrlgu/ZyztNutVrN5dnZ6enJycnx8dHQkARSgAAUoQAEKUIACFKAABShAAQpQgAIUoFyh8whKlLb9uAfU4AldBta1isbSGBpIa6roMvHMU2VqQUNmmpMTdPGq4ipR7nlB31SpSvA9v4rKpYNkxBMqyaXriSTOUDwoE/aXfKGKVyaDGqBOmdQB9dy96+l4AAUoQAEKUIACNBWa+Fh3oaLVoa6nxrG3HyAM1PGU+FJ+KjY0Xh2JXtFoNTUTHooVRT4IqLo0MVlsHgDUGhSGUmY3VCaZvpIxOwllwDxvfQj0qTi0PxwO+4nQ6lLy90R0PajtVRgC5gu97V+opaKoLa7Q3rDsLhZu8oaW3MLiDyUPLLV/xR9K/tO+r1As1QNV970IU+qC7ruBVRuU/HyPuB5AAQpQgAL060DdvBxIRT2RKuoGnQtpsedYFKjrLXD+ya8w0HnuoTCq5Qo/HYqRLNiaKQsqIbLhkpOWMFBJSSzr/a2IYE1Pv563RYImd0rCrRLyTVNVsEBPPYUm956CSqqKgsV6jSagVNjROiFSrHd9CKUFJa/RyxApy/Wt6/Neozp5MzXWkJKMsWhQorzaRCrqTJzlcgi9iJAoQNqOUBclIbQRIVGEpCdt4kGZErGn20e6rlAXzjEUIbyGFOwKPwFlfWAxUmTo1umvsBV1PIACFKAA/ZrQjAOLXKij1lHR9G2hLKjLPmJqqGj6shunQt3gc9BWFf7QrGxCY6TKOjgQ4gnN3cKKoZtIif66cEVvLqpCd8yKKD506jjbSLokV4xCUNpDI1eDrgb53QnWiELtVKTaGAyNoptkZLCkCpQ8939f/axWy0SCASdrNiZQORU5moyGRrGK+gfz1aALf+rKDhJMXUXTYQyKtpATczx6GBhGAWi4kYvlitAdw4EUuo40LTMYEEuOsmVujTt2lAqnIkWg/irXR04tc5w+c/fJxzeFKuojR5Y1nYyiFIfGZzWfDCXIsWVZJhu2zJxirL2i0wlBTtkMY+4Aa+1QQjVNc/ekbf0VLTgSDFCAAvQ/heb2twlVUe8wKprbljnYWnTXBd3R6Pq516N7QHf1CAsDza9n+oYMf+iO9nZ/FVq+S+cj71OyOTCwNjGg0S6XCj3OHwnNGcHQ9IZcrWuc051f9GuypZN5HwmxoKhalw63e+loOW+0llA3/Ul26WjhWJPfBiPW3Ymy55nacL8ngAIUoAAFKEABClCAAhSgAAUoQAEKUIACdAv6D296GeCeU9EMAAAAAElFTkSuQmCC" alt="Logo del clan NG" width="84" height="84">
+      <div>
+        <h1>Parties del Clan NG</h1>
+        <p class="sub">Lineage 2 Ordinary World. Escribe tu nick, elige un puesto libre y queda reservado para todo el clan. Puedes salir de un puesto y tomar otro cuando cambies de clase o subclase.</p>
+        <p class="dedic">Esta página se hizo para que nuestro amigo Lenner deje de llorar.</p>
+      </div>
+    </div>
+    <div class="total"><b id="total">0 / 27</b><span>puestos cubiertos</span></div>
+  </header>
+
+  <section class="me" aria-label="Tus datos">
+    <div class="field"><label for="nick">Tu nick en el juego</label><input id="nick" type="text" maxlength="24" placeholder="Ej. DarkKing" autocomplete="off"></div>
+    <div class="field"><label for="cls">Clase o subclase (opcional)</label><input id="cls" type="text" maxlength="30" placeholder="Ej. Duelist, Cardinal" autocomplete="off"></div>
+    <div class="hint">Cada persona puede tomar un puesto de party y uno de reserva. Si cambias de clase, libera tu puesto y elige otro.</div>
+    <div id="status" class="status" role="status">Conectando…</div>
+  </section>
+
+  <section id="go" class="go stop" role="status" aria-live="polite"></section>
+
+  <main class="parties" id="parties"></main>
+
+  <section class="reserve" aria-label="Reserva">
+    <div class="ph"><h2 style="font-family:var(--display);margin:0;color:var(--gold);font-size:1.15rem">Reserva</h2><span class="count" id="reserve-count">0 / 6</span></div>
+    <p class="desc" style="margin:6px 0 10px">Para quien no entra en una party o cubre ausencias. Indica la clase para saber a quién llamar según el rol que falte.</p>
+    <ul class="slots" id="reserve"></ul>
+  </section>
+
+  <section class="rules">
+    <h3>Cómo se pelea</h3>
+    <ul>
+      <li>Front engancha y presiona primero. Magos y archers pegan desde atrás y los bishops curan a quien reciba el focus.</li>
+      <li>Un solo líder marca el objetivo y todos pegan al mismo enemigo.</li>
+      <li>Si falta un bishop en tu party, avisa en Discord antes de entrar al evento.</li>
+      <li>Luz verde solo con 2 parties completas (9 de 9, con todos sus roles). Si no se completan, el clan no sale al evento.</li>
+    </ul>
+  </section>
+
+  <section class="reset" aria-label="Nuevo evento">
+    <span>Antes de cada agite o raid, limpia los puestos para que todos elijan de nuevo.</span>
+    <button id="reset" type="button">Nuevo evento: limpiar puestos</button>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js"></script>
+<script>
+(function () {
+  var PARTIES = [
+    { id: "f", cls: "front", name: "Party Front", desc: "Cuerpo a cuerpo: presiona y engancha al frente.", slots: [
+      ["Polero", "Polero 1"], ["Polero", "Polero 2"], ["Gladiador", "Gladiador 1"], ["Gladiador", "Gladiador 2"],
+      ["Khavatari", "Khavatari 1"], ["Khavatari", "Khavatari 2"], ["Overlord", "Overlord"], ["Bishop", "Bishop 1"], ["Bishop", "Bishop 2"] ] },
+    { id: "m", cls: "mage", name: "Party Magos", desc: "Daño mágico a distancia, protegido por el front.", slots: [
+      ["Mago", "Mago 1"], ["Mago", "Mago 2"], ["Mago", "Mago 3"], ["Mago", "Mago 4"], ["Mago", "Mago 5"], ["Mago", "Mago 6"],
+      ["Bishop", "Bishop 1"], ["Bishop", "Bishop 2"], ["Overlord", "Overlord"] ] },
+    { id: "a", cls: "arch", name: "Party Archers", desc: "Daño físico a distancia con apoyo de curación.", slots: [
+      ["Archer", "Archer 1"], ["Archer", "Archer 2"], ["Archer", "Archer 3"], ["Archer", "Archer 4"], ["Archer", "Archer 5"], ["Archer", "Archer 6"],
+      ["Bishop", "Bishop 1"], ["Bishop", "Bishop 2"], ["Tanque", "Tanque"] ] }
+  ];
+  var RESERVE = 6;
+  var claims = {};
+  var SUPABASE_URL = "https://iugnbbekribgkzyrxgqq.supabase.co", SUPABASE_KEY = "sb_publishable_csvgCyPGzJ0IsW3s0RjVCw_7go5pLQl";
+  var db = null, uid = null, ready = false;
+  var $ = function (id) { return document.getElementById(id); };
+  var nick = $("nick"), cls = $("cls"), statusEl = $("status");
+  try { nick.value = localStorage.getItem("l2nick") || ""; cls.value = localStorage.getItem("l2cls") || ""; } catch (e) {}
+  nick.addEventListener("input", function () { try { localStorage.setItem("l2nick", nick.value); } catch (e) {} });
+  cls.addEventListener("input", function () { try { localStorage.setItem("l2cls", cls.value); } catch (e) {} });
+
+  function setStatus(t, warn) { statusEl.textContent = t; statusEl.className = "status" + (warn ? " warn" : ""); }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+
+  function mineIn(prefix) {
+    for (var k in claims) { if (k.indexOf(prefix) === 0 && claims[k] && claims[k].uid === uid && uid) return k; }
+    return null;
+  }
+
+  var ICONS = {
+    "Polero": '<path d="M4 20L17 7"/><path d="M15 3l6 6-8-1z"/>',
+    "Gladiador": '<path d="M4 20L18 6"/><path d="M20 20L6 6"/><path d="M15 4h5v5"/><path d="M9 4H4v5"/>',
+    "Khavatari": '<rect x="5" y="9" width="14" height="9" rx="3"/><path d="M8 9V6M12 9V5M16 9V6"/>',
+    "Overlord": '<path d="M4 18h16L19 8l-4 4-3-6-3 6-4-4z"/>',
+    "Bishop": '<path d="M12 4v16M5 10h14"/>',
+    "Mago": '<path d="M6 20L16 10"/><circle cx="17.5" cy="8.5" r="3"/>',
+    "Archer": '<path d="M6 4c8 2 8 14 0 16"/><path d="M6 12h14M17 9l3 3-3 3"/>',
+    "Tanque": '<path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/>',
+    "Reserva": '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c1-4 4-6 7-6s6 2 7 6"/>'
+  };
+  function icon(key) {
+    return '<svg class="ico" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONS[key] || ICONS["Reserva"]) + '</svg>';
+  }
+
+  function callerHtml(p) {
+    var id = "l" + p.id, c = claims[id], mine = c && uid && c.uid === uid;
+    var who = c ? '<span class="n">' + esc(c.name) + '</span>' + (c.cls ? ' <span class="c">' + esc(c.cls) + '</span>' : '') : '<span class="empty">Sin caller</span>';
+    var btn = !c ? '<button data-act="take" data-id="' + id + '"' + (ready ? "" : " disabled") + '>Ser caller</button>'
+      : mine ? '<button class="leave" data-act="leave" data-id="' + id + '">Dejar</button>' : "";
+    return '<div class="caller' + (mine ? " mine" : "") + '"><span class="role">' + icon("Overlord") + '<span>Caller</span></span><span class="who">' + who + '</span>' + btn + '</div>';
+  }
+
+  function slotHtml(id, label, key) {
+    var c = claims[id], mine = c && uid && c.uid === uid;
+    var who = c ? '<span class="n">' + esc(c.name) + '</span>' + (c.cls ? '<span class="c">' + esc(c.cls) + '</span>' : '') : '<span class="empty">Libre</span>';
+    var btn;
+    if (!c) btn = '<button data-act="take" data-id="' + id + '"' + (ready ? "" : " disabled") + '>Tomar</button>';
+    else if (mine) btn = '<button class="leave" data-act="leave" data-id="' + id + '">Salir</button>';
+    else btn = "";
+    return '<li class="slot' + (mine ? " mine" : "") + '"><span class="role">' + icon(key) + '<span>' + esc(label) + '</span></span><span class="who">' + who + '</span>' + btn + '</li>';
+  }
+
+  function render() {
+    var total = 0, html = "";
+    PARTIES.forEach(function (p) {
+      var filled = 0, items = "";
+      p.slots.forEach(function (s, i) {
+        var id = p.id + (i + 1);
+        if (claims[id]) filled++;
+        items += slotHtml(id, s[1], s[0]);
+      });
+      total += filled;
+      html += '<section class="party ' + p.cls + '"><div class="ph"><h2>' + p.name + '</h2><span class="count">' + filled + ' / ' + p.slots.length + '</span></div>' +
+        callerHtml(p) + '<p class="desc">' + p.desc + '</p><div class="bar"><i style="width:' + Math.round(filled / p.slots.length * 100) + '%"></i></div><ul class="slots">' + items + '</ul></section>';
+    });
+    $("parties").innerHTML = html;
+    $("total").textContent = total + " / 27";
+    renderGo();
+    var r = "", rc = 0;
+    for (var i = 1; i <= RESERVE; i++) { var id = "r" + i; if (claims[id]) rc++; r += slotHtml(id, "Reserva " + i, "Reserva"); }
+    $("reserve").innerHTML = r;
+    $("reserve-count").textContent = rc + " / " + RESERVE;
+  }
+
+  function renderGo() {
+    var info = PARTIES.map(function (p) {
+      var miss = [];
+      p.slots.forEach(function (s, i) { if (!claims[p.id + (i + 1)]) miss.push(s[1]); });
+      return { name: p.name, miss: miss };
+    });
+    var full = info.filter(function (x) { return x.miss.length === 0; }).length;
+    var el = $("go");
+    if (full >= 2) {
+      el.className = "go green";
+      el.innerHTML = "<b>LUZ VERDE: se sale al evento</b><span>" + full + " parties completas con todos sus roles.</span>";
+      return;
+    }
+    var near = info.filter(function (x) { return x.miss.length > 0; }).sort(function (a, b) { return a.miss.length - b.miss.length; });
+    var need = 2 - full, lines = near.slice(0, need).map(function (x) { return x.name + ": falta " + x.miss.join(", "); });
+    el.className = "go stop";
+    el.innerHTML = "<b>SIN LUZ VERDE: no se sale</b><span>Hay " + full + " de 2 parties completas necesarias. Para salir faltaría:</span><span>" + esc(lines.join(" · ")) + "</span>";
+  }
+
+  var resetArmed = false, resetTimer = null;
+
+  function refresh() {
+    return db.from("claims").select("id,name,cls,uid,at").then(function (r) {
+      if (r.error) throw r.error;
+      var out = {};
+      (r.data || []).forEach(function (d) { out[d.id] = d; });
+      claims = out; ready = true;
+      setStatus("Conectado. Los cambios se ven en vivo.");
+      render();
+    });
+  }
+
+  $("reset").addEventListener("click", function () {
+    var btn = this;
+    if (!db) return;
+    if (!resetArmed) {
+      resetArmed = true; btn.textContent = "Confirmar: borrar todos los puestos";
+      resetTimer = setTimeout(function () { resetArmed = false; btn.textContent = "Nuevo evento: limpiar puestos"; }, 6000);
+      return;
+    }
+    clearTimeout(resetTimer); resetArmed = false; btn.disabled = true;
+    db.from("claims").delete().neq("id", "").then(function (r) {
+      if (r.error) throw r.error;
+      setStatus("Puestos limpiados. Listo para el nuevo evento.");
+      return refresh();
+    }).catch(function () { setStatus("No se pudieron borrar todos los puestos.", true); })
+      .then(function () { btn.disabled = false; btn.textContent = "Nuevo evento: limpiar puestos"; });
+  });
+
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-act]");
+    if (!b || !db) return;
+    var id = b.getAttribute("data-id"), act = b.getAttribute("data-act");
+    if (act === "take") {
+      var name = nick.value.trim();
+      if (!name) { setStatus("Escribe tu nick antes de tomar un puesto.", true); nick.focus(); return; }
+      var g = id.charAt(0), kind = g === "r" ? "r" : (g === "l" ? "l" : "p");
+      var already = kind === "r" ? mineIn("r") : kind === "l" ? mineIn("l") : (mineIn("f") || mineIn("m") || mineIn("a"));
+      if (already) { setStatus("Ya tienes " + (kind === "r" ? "un puesto en la reserva" : kind === "l" ? "el cargo de caller en otra party" : "un puesto en una party") + ". Sal de ese primero.", true); return; }
+      b.disabled = true;
+      db.from("claims").insert({ id: id, name: name, cls: cls.value.trim(), uid: uid, at: Date.now() }).then(function (r) {
+        if (r.error) throw r.error;
+        setStatus("Puesto reservado.");
+        return refresh();
+      }).catch(function () { setStatus("No se pudo guardar. Puede que otra persona tomara el puesto; se actualizó la lista.", true); refresh().catch(function () {}); });
+    } else if (act === "leave") {
+      b.disabled = true;
+      db.from("claims").delete().eq("id", id).eq("uid", uid).then(function (r) {
+        if (r.error) throw r.error;
+        setStatus("Puesto liberado.");
+        return refresh();
+      }).catch(function () { setStatus("No se pudo liberar el puesto.", true); });
+    }
+  });
+
+  render();
+
+  var timer = setTimeout(function () { setStatus("Sin conexión con el clan. Recarga la página.", true); }, 10000);
+  try {
+    uid = localStorage.getItem("l2uid");
+    if (!uid) { uid = "u" + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem("l2uid", uid); }
+  } catch (e) { uid = "u" + Math.random().toString(36).slice(2); }
+
+  if (!window.supabase || SUPABASE_URL.indexOf("__") === 0) {
+    setStatus("Falta conectar la base de datos del clan.", true);
+  } else {
+    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    refresh().then(function () { clearTimeout(timer); }).catch(function () { clearTimeout(timer); setStatus("No se pudo leer la lista del clan.", true); });
+    try {
+      db.channel("claims-live").on("postgres_changes", { event: "*", schema: "public", table: "claims" }, function () { refresh().catch(function () {}); }).subscribe();
+    } catch (e) {}
+    setInterval(function () { refresh().catch(function () {}); }, 8000);
+  }
+})();
+</script>
+</body>
+</html>
