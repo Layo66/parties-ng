@@ -94,6 +94,7 @@ button.leave:hover:not(:disabled) { background: var(--muted); }
 .admin input { background: var(--bg); border: 1px solid var(--line); color: var(--ink); border-radius: 8px; padding: 8px 10px; font: inherit; width: 160px; }
 .admin input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .hidden { display: none !important; }
+.readonly .me, .readonly button[data-act] { display: none !important; }
 </style>
 </head>
 <body>
@@ -262,8 +263,14 @@ button.leave:hover:not(:disabled) { background: var(--muted); }
   var isOpen = false;
 
   function applyOpen() {
-    $("app").classList.toggle("hidden", !isOpen);
+    var n = Object.keys(claims).length;
+    $("app").classList.toggle("hidden", !isOpen && n === 0);
+    $("app").classList.toggle("readonly", !isOpen);
     $("closed").classList.toggle("hidden", isOpen);
+    $("closed").querySelector("b").textContent = "Página cerrada";
+    $("closed").querySelector("span").textContent = n
+      ? "Resumen de lo que quedó anotado. Se mantiene hasta que el líder borre los puestos."
+      : "Se abre cuando el líder envía el aviso de un nuevo evento. Vuelve a abrir el enlace entonces.";
     $("toggle").textContent = isOpen ? "Cerrar la página" : "Abrir para agite o RB";
   }
 
@@ -271,15 +278,14 @@ button.leave:hover:not(:disabled) { background: var(--muted); }
     return db.from("config").select("open").eq("id", "event").then(function (c) {
       if (c.error) throw c.error;
       isOpen = !!(c.data && c.data[0] && c.data[0].open);
-      applyOpen();
-      if (!isOpen) { claims = {}; ready = false; return; }
       return db.from("claims").select("id,name,cls,uid,at").then(function (r) {
         if (r.error) throw r.error;
         var out = {};
         (r.data || []).forEach(function (d) { out[d.id] = d; });
         claims = out; ready = true;
-        setStatus("Conectado. Los cambios se ven en vivo.");
+        setStatus(isOpen ? "Conectado. Los cambios se ven en vivo." : "Página cerrada.");
         render();
+        applyOpen();
       });
     });
   }
@@ -291,7 +297,7 @@ button.leave:hover:not(:disabled) { background: var(--muted); }
     btn.disabled = true;
     db.rpc("set_open", { pin: pin, val: target }).then(function (r) {
       if (r.error) throw r.error;
-      msg.textContent = r.data ? (target ? "Abierto. Se limpiaron los puestos." : "Cerrado.") : "Código incorrecto.";
+      msg.textContent = r.data ? (target ? "Abierto." : "Cerrado. Los puestos quedan visibles hasta que los limpies.") : "Código incorrecto.";
       $("pin").value = "";
       return refresh();
     }).catch(function () { msg.textContent = "No se pudo cambiar el estado."; })
