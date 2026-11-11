@@ -149,7 +149,7 @@ button.leave:hover:not(:disabled) { background: var(--muted); }
   <section class="admin" aria-label="Líder">
     <span>Líder:</span>
     <input id="pin" type="password" placeholder="Código" autocomplete="off" maxlength="30">
-    <button id="toggle" type="button">Abrir para el evento</button>
+    <button id="toggle" type="button">Abrir para agite o RB</button>
     <span id="adminmsg" role="status"></span>
   </section>
 </div>
@@ -267,7 +267,7 @@ button.leave:hover:not(:disabled) { background: var(--muted); }
   function applyOpen() {
     $("app").classList.toggle("hidden", !isOpen);
     $("closed").classList.toggle("hidden", isOpen);
-    $("toggle").textContent = isOpen ? "Cerrar la página" : "Abrir para el evento";
+    $("toggle").textContent = isOpen ? "Cerrar la página" : "Abrir para agite o RB";
   }
 
   function refresh() {
