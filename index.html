@@ -140,16 +140,13 @@ button.leave:hover:not(:disabled) { background: var(--muted); }
     </ul>
   </section>
 
-  <section class="reset" aria-label="Nuevo evento">
-    <span>Antes de cada agite o raid, limpia los puestos para que todos elijan de nuevo.</span>
-    <button id="reset" type="button">Nuevo evento: limpiar puestos</button>
-  </section>
   </div>
 
   <section class="admin" aria-label="Líder">
     <span>Líder:</span>
     <input id="pin" type="password" placeholder="Código" autocomplete="off" maxlength="30">
     <button id="toggle" type="button">Abrir para agite o RB</button>
+    <button id="clear" type="button" class="leave">Limpiar puestos</button>
     <span id="adminmsg" role="status"></span>
   </section>
 </div>
@@ -301,21 +298,18 @@ button.leave:hover:not(:disabled) { background: var(--muted); }
       .then(function () { btn.disabled = false; });
   });
 
-  $("reset").addEventListener("click", function () {
-    var btn = this;
+  $("clear").addEventListener("click", function () {
+    var btn = this, pin = $("pin").value, msg = $("adminmsg");
     if (!db) return;
-    if (!resetArmed) {
-      resetArmed = true; btn.textContent = "Confirmar: borrar todos los puestos";
-      resetTimer = setTimeout(function () { resetArmed = false; btn.textContent = "Nuevo evento: limpiar puestos"; }, 6000);
-      return;
-    }
-    clearTimeout(resetTimer); resetArmed = false; btn.disabled = true;
-    db.from("claims").delete().neq("id", "").then(function (r) {
+    if (!pin) { msg.textContent = "Escribe el código."; return; }
+    btn.disabled = true;
+    db.rpc("clear_claims", { pin: pin }).then(function (r) {
       if (r.error) throw r.error;
-      setStatus("Puestos limpiados. Listo para el nuevo evento.");
+      msg.textContent = r.data ? "Puestos limpiados." : "Código incorrecto.";
+      $("pin").value = "";
       return refresh();
-    }).catch(function () { setStatus("No se pudieron borrar todos los puestos.", true); })
-      .then(function () { btn.disabled = false; btn.textContent = "Nuevo evento: limpiar puestos"; });
+    }).catch(function () { msg.textContent = "No se pudo limpiar."; })
+      .then(function () { btn.disabled = false; });
   });
 
   document.addEventListener("click", function (e) {
@@ -336,7 +330,7 @@ button.leave:hover:not(:disabled) { background: var(--muted); }
       }).catch(function () { setStatus("No se pudo guardar. Puede que otra persona tomara el puesto; se actualizó la lista.", true); refresh().catch(function () {}); });
     } else if (act === "leave") {
       b.disabled = true;
-      db.from("claims").delete().eq("id", id).eq("uid", uid).then(function (r) {
+      db.rpc("release_claim", { cid: id, u: uid }).then(function (r) {
         if (r.error) throw r.error;
         setStatus("Puesto liberado.");
         return refresh();
