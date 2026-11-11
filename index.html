@@ -87,6 +87,13 @@ button.leave:hover:not(:disabled) { background: var(--muted); }
 .rules h3 { font-family: var(--display); color: var(--gold); margin: 0 0 4px; font-size: 1rem; }
 .rules ul { margin: 0; padding-left: 18px; }
 @media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
+.closed { border: 1px solid var(--line); border-left: 8px solid var(--gold); background: var(--panel); border-radius: 10px; padding: 18px 16px; display: grid; gap: 6px; }
+.closed b { font-family: var(--display); font-size: 1.3rem; color: var(--gold); }
+.closed span { color: var(--muted); }
+.admin { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; border-top: 1px solid var(--line); padding-top: 14px; color: var(--muted); font-size: .9rem; }
+.admin input { background: var(--bg); border: 1px solid var(--line); color: var(--ink); border-radius: 8px; padding: 8px 10px; font: inherit; width: 160px; }
+.admin input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.hidden { display: none !important; }
 </style>
 </head>
 <body>
@@ -103,6 +110,9 @@ button.leave:hover:not(:disabled) { background: var(--muted); }
     <div class="total"><b id="total">0 / 27</b><span>puestos cubiertos</span></div>
   </header>
 
+  <section id="closed" class="closed hidden" role="status"><b>Página cerrada</b><span>Se abre cuando el líder envía el aviso de un nuevo evento. Vuelve a abrir el enlace entonces.</span></section>
+
+  <div id="app" class="hidden" style="display:flex;flex-direction:column;gap:24px">
   <section class="me" aria-label="Tus datos">
     <div class="field"><label for="nick">Tu nick en el juego</label><input id="nick" type="text" maxlength="24" placeholder="Ej. DarkKing" autocomplete="off"></div>
     <div class="field"><label for="cls">Clase o subclase (opcional)</label><input id="cls" type="text" maxlength="30" placeholder="Ej. Duelist, Cardinal" autocomplete="off"></div>
@@ -133,6 +143,14 @@ button.leave:hover:not(:disabled) { background: var(--muted); }
   <section class="reset" aria-label="Nuevo evento">
     <span>Antes de cada agite o raid, limpia los puestos para que todos elijan de nuevo.</span>
     <button id="reset" type="button">Nuevo evento: limpiar puestos</button>
+  </section>
+  </div>
+
+  <section class="admin" aria-label="Líder">
+    <span>Líder:</span>
+    <input id="pin" type="password" placeholder="Código" autocomplete="off" maxlength="30">
+    <button id="toggle" type="button">Abrir para el evento</button>
+    <span id="adminmsg" role="status"></span>
   </section>
 </div>
 
@@ -244,16 +262,44 @@ button.leave:hover:not(:disabled) { background: var(--muted); }
 
   var resetArmed = false, resetTimer = null;
 
+  var isOpen = false;
+
+  function applyOpen() {
+    $("app").classList.toggle("hidden", !isOpen);
+    $("closed").classList.toggle("hidden", isOpen);
+    $("toggle").textContent = isOpen ? "Cerrar la página" : "Abrir para el evento";
+  }
+
   function refresh() {
-    return db.from("claims").select("id,name,cls,uid,at").then(function (r) {
-      if (r.error) throw r.error;
-      var out = {};
-      (r.data || []).forEach(function (d) { out[d.id] = d; });
-      claims = out; ready = true;
-      setStatus("Conectado. Los cambios se ven en vivo.");
-      render();
+    return db.from("config").select("open").eq("id", "event").then(function (c) {
+      if (c.error) throw c.error;
+      isOpen = !!(c.data && c.data[0] && c.data[0].open);
+      applyOpen();
+      if (!isOpen) { claims = {}; ready = false; return; }
+      return db.from("claims").select("id,name,cls,uid,at").then(function (r) {
+        if (r.error) throw r.error;
+        var out = {};
+        (r.data || []).forEach(function (d) { out[d.id] = d; });
+        claims = out; ready = true;
+        setStatus("Conectado. Los cambios se ven en vivo.");
+        render();
+      });
     });
   }
+
+  $("toggle").addEventListener("click", function () {
+    var btn = this, pin = $("pin").value, target = !isOpen, msg = $("adminmsg");
+    if (!db) return;
+    if (!pin) { msg.textContent = "Escribe el código."; return; }
+    btn.disabled = true;
+    db.rpc("set_open", { pin: pin, val: target }).then(function (r) {
+      if (r.error) throw r.error;
+      msg.textContent = r.data ? (target ? "Abierto. Se limpiaron los puestos." : "Cerrado.") : "Código incorrecto.";
+      $("pin").value = "";
+      return refresh();
+    }).catch(function () { msg.textContent = "No se pudo cambiar el estado."; })
+      .then(function () { btn.disabled = false; });
+  });
 
   $("reset").addEventListener("click", function () {
     var btn = this;
@@ -300,7 +346,7 @@ button.leave:hover:not(:disabled) { background: var(--muted); }
 
   render();
 
-  var timer = setTimeout(function () { setStatus("Sin conexión con el clan. Recarga la página.", true); }, 10000);
+  var timer = setTimeout(function () { setStatus("Sin conexión con el clan. Recarga la página.", true); $("closed").classList.remove("hidden"); $("closed").querySelector("b").textContent = "Sin conexión"; $("closed").querySelector("span").textContent = "No se pudo conectar con el clan. Recarga la página en unos segundos."; }, 10000);
   try {
     uid = localStorage.getItem("l2uid");
     if (!uid) { uid = "u" + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem("l2uid", uid); }
